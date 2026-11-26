@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DNS 管理</title>
+<link rel="stylesheet" href="/panel.css?v=filters">
+<script src="/panel.js?v=filters" type="module"></script>
+</head>
+<body>
+<header class="top"><div class="brand"><span class="mark" aria-hidden="true">DNS</span><strong>DNS 管理</strong></div><div class="top-actions"><a class="docs-link" href="/docs">API 文档</a><span id="identity" hidden></span><button id="members-open" class="ghost" hidden>成员管理</button><button id="audit-open" class="ghost" hidden>操作记录</button><button id="logout" class="ghost" hidden>断开连接</button></div></header>
+<main>
+<section id="login" class="login card">
+<h1>连接 DNS 服务</h1>
+<form id="login-form">
+<label>个人凭证或服务密钥<input id="key" type="password" required autocomplete="off" placeholder="输入凭证"></label>
+<button class="primary">连接</button>
+</form>
+<p id="login-error" class="error" role="alert" hidden></p>
+</section>
+<nav id="panel-tabs" class="panel-tabs" aria-label="面板页面" hidden>
+<button id="dns-tab" type="button" aria-controls="workspace" aria-current="page">DNS 记录</button>
+<button id="channels-tab" type="button" aria-controls="channels">渠道</button>
+</nav>
+<div id="workspace" class="layout" hidden>
+<aside class="card sidebar">
+<div class="sidebar-heading"><h2>域名</h2><small id="zone-count" role="status"></small></div>
+<div class="zone-filters">
+<label>搜索域名<input id="zone-search" type="search" placeholder="输入域名"></label>
+<label>托管商
+<select id="provider-filter" aria-label="DNS 托管商"><option value="">全部托管商</option><option value="cloudflare">Cloudflare</option><option value="godaddy">GoDaddy</option></select></label>
+<label>账号
+<select id="source-filter" aria-label="账号来源"><option value="">全部账号</option></select></label>
+</div>
+<nav id="zones" aria-label="域名列表"></nav>
+</aside>
+<section class="card records">
+<div class="heading"><div><h1 id="domain">DNS 记录</h1><p id="summary"></p></div><div class="actions"><button id="refresh">刷新</button><button id="create" class="primary">新增记录</button></div></div>
+<p id="notice" role="status" class="notice" hidden></p>
+<div class="record-filters">
+<label>搜索记录<input id="search" type="search" placeholder="搜索主机名或记录值"></label>
+<label>记录类型<select id="type-filter"><option value="">全部类型</option></select></label>
+</div>
+<div class="table-wrap"><table><thead><tr><th scope="col">类型</th><th scope="col">主机名</th><th scope="col">记录值</th><th scope="col">TTL</th><th scope="col">代理</th><th scope="col">操作</th></tr></thead><tbody id="records"></tbody></table></div>
+</section>
+</div>
+<section id="channels" class="card records" aria-labelledby="channels-title" hidden>
+<h1 id="channels-title">渠道</h1>
+<div class="table-wrap channel-table"><table><thead><tr><th scope="col">账号</th><th scope="col">托管商</th><th scope="col">域名数</th><th scope="col">Token 到期日</th><th scope="col">剩余时间</th></tr></thead><tbody id="channel-rows"></tbody></table></div>
+</section>
+</main>
+<dialog id="editor"><form id="record-form">
+<h2 id="editor-title"></h2>
+<div class="fields">
+<label>类型<select id="record-type"></select></label>
+<label class="wide">主机名<input id="record-name" required placeholder="@、www 或完整域名"></label>
+<label class="full"><span id="value-label">记录值</span><textarea id="record-value" rows="3" required></textarea></label>
+<label>TTL（秒）<input id="ttl" type="number" min="1" step="1" value="1" required><small>1 表示自动</small></label>
+<label id="priority-field" hidden>优先级<input id="priority" type="number" min="0" max="65535" step="1" value="10"></label>
+<label id="proxy-field" class="check" hidden><input id="proxy" type="checkbox">开启 Cloudflare 代理</label>
+<label class="full">备注<input id="comment" maxlength="100"></label>
+</div>
+<p id="editor-error" class="error" role="alert" hidden></p>
+<div class="dialog-actions"><button type="button" data-close="editor">取消</button><button id="preview-button" class="primary">预览变更</button></div>
+</form></dialog>
+<dialog id="review">
+<h2 id="review-title">确认变更</h2>
+<p id="review-target"></p>
+<div class="diff"><div><h3>变更前</h3><pre id="before"></pre></div><div><h3>变更后</h3><pre id="after"></pre></div></div>
+<p id="review-error" class="error" role="alert" hidden></p>
+<div class="dialog-actions"><button type="button" data-close="review">取消</button><button id="apply" class="primary">应用变更</button></div>
+</dialog>
+<dialog id="audit">
+<h2>DNS 操作记录</h2>
+<div class="filters"><input id="audit-actor" aria-label="按成员筛选" placeholder="输入完整成员名"><button id="audit-filter">查询</button></div>
+<p id="audit-message" role="status" hidden></p>
+<div class="table-wrap"><table><thead><tr><th>时间</th><th>成员</th><th>来源</th><th>域名</th><th>操作</th><th>状态</th><th>详情</th></tr></thead><tbody id="audit-rows"></tbody></table></div>
+<div class="dialog-actions"><button id="audit-more" hidden>加载更多</button><button type="button" data-close="audit">关闭</button></div>
+</dialog>
+<dialog id="members">
+<h2>成员管理</h2>
+<form id="member-form" class="filters">
+<label>成员名<input id="member-name" required maxlength="80" pattern="[A-Za-z0-9_.@-]{1,80}" placeholder="姓名拼音或公司邮箱"></label>
+<label>权限<select id="member-role"><option value="read">只读</option><option value="write">可写</option><option value="admin">管理员</option></select></label>
+<button class="primary">创建并签发</button>
+</form>
+<p id="members-message" role="status" hidden></p>
+<div id="issued" hidden><p id="issued-label"></p><label>个人 MCP 凭证<input id="issued-token" readonly autocomplete="off"></label><button id="issued-copy" type="button">复制凭证</button></div>
+<div class="table-wrap"><table><thead><tr><th>成员</th><th>权限</th><th>状态</th><th>操作</th></tr></thead><tbody id="member-rows"></tbody></table></div>
+<div class="dialog-actions"><button type="button" data-close="members">关闭</button></div>
+</dialog>
+<dialog id="member-confirm">
+<h2 id="member-confirm-title"></h2>
+<p id="member-confirm-copy"></p>
+<div class="dialog-actions"><button type="button" data-close="member-confirm">取消</button><button id="member-confirm-apply" type="button" class="primary">确认</button></div>
+</dialog>
+</body></html>

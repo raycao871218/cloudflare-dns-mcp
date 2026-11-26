@@ -1,0 +1,10 @@
+*
+!Dockerfile
+!requirements.txt
+!app.py
+!godaddy.py
+!dns_mcp.py
+!database.py
+!migrate_sqlite.py
+!web/
+!web/**

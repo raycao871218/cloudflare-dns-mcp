@@ -20,7 +20,7 @@ def create_mcp(*, get_zones, get_records, preview, apply, find_member, change_ty
     if any(not re.fullmatch(r"[a-z0-9.-]+(?::[0-9]+)?", host) for host in team_hosts):
         raise RuntimeError("DNS_MCP_ALLOWED_HOSTS must contain exact hostnames with optional ports.")
     mcp = FastMCP(
-        "Cloudflare DNS",
+        "Company DNS",
         instructions=(
             "Manage authorized DNS zones. Read records before an update or deletion and identify the record ID. "
             "For a write, preview the exact change, show the before/after values when authorization is still needed, "
@@ -57,14 +57,14 @@ def create_mcp(*, get_zones, get_records, preview, apply, find_member, change_ty
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
     async def list_zones(ctx: Context) -> dict[str, Any]:
-        """List Cloudflare DNS zones available to this service."""
+        """List DNS zones, their provider and named source. Use source to disambiguate domains."""
         return await mcp_call(get_zones, mcp_request(ctx))
 
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
-    async def list_dns_records(ctx: Context, domain: str, name: str | None = None) -> dict[str, Any]:
+    async def list_dns_records(ctx: Context, domain: str, name: str | None = None, source: str | None = None) -> dict[str, Any]:
         """List DNS records for a zone. Use name to filter by a fully qualified record name."""
-        return await mcp_call(get_records, mcp_request(ctx), domain, name)
+        return await mcp_call(get_records, mcp_request(ctx), domain, name, source)
 
 
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True))
