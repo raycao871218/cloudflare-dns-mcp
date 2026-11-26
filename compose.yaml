@@ -3,6 +3,7 @@ services:
     build: .
     image: company-dns-manager:local
     container_name: cloudflare-dns-manager
+    network_mode: bridge
     env_file: .env
     environment:
       DNS_PANEL_AUTO_LOGIN: ${DNS_PANEL_AUTO_LOGIN:-true}
